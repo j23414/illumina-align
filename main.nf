@@ -1,5 +1,6 @@
 include { FASTQC } from './modules/nf-core/fastqc/main' 
-include { MULTIQC } from './modules/nf-core/multiqc/main'     
+include { MULTIQC } from './modules/nf-core/multiqc/main'
+include { BWAMEM2_MEM } from '../modules/nf-core/bwamem2/mem/main'
 
 workflow {
     main:
