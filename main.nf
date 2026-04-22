@@ -5,14 +5,27 @@ workflow {
     main:
     // Illumina Reads
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
-      | take(3)
+//      | take(3)
       | map { n ->
             def meta = [id: n.get(0) ]
             return tuple(meta, n.get(1))
         }
-      | view
+//      | view
 
     // Run QC
     FASTQC(reads_ch)
-    FASTQC.out.html.view()
+    FASTQC.out.html
+
+    multiqc_input = FASTQC.out.html.map{meta, files -> files}
+    | mix(FASTQC.out.zip.map{meta, files -> files})
+    | flatten
+    | collect
+    | map {
+      n ->
+      def meta = [id: 'all']
+      return tuple(meta, n, [], [], [], [])
+    }
+
+    MULTIQC(multiqc_input)
+    MULTIQC.out.report.view()
 }
