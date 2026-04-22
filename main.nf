@@ -3,11 +3,16 @@ include { MULTIQC } from './modules/nf-core/multiqc/main'
 
 workflow {
     main:
+    // Illumina Reads
     reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
-      | view {files -> "Read files : $files "}
+      | take(3)
+      | map { n ->
+            def meta = [id: n.get(0) ]
+            return tuple(meta, n.get(1))
+        }
+      | view
 
-    // reads_ch
-    // | FASTQC
-    // | MULTIQC
-    // | view
+    // Run QC
+    FASTQC(reads_ch)
+    FASTQC.out.html.view()
 }
