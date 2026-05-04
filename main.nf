@@ -30,4 +30,31 @@ workflow {
 
     MULTIQC(multiqc_input)
     MULTIQC.out.report.view()
+
+    // Load reference
+    if(params.reference){
+      reference_ch = channel.fromPath(params.reference, checkIfExists:true)
+      | map {
+        n ->
+        return tuple(n.baseName, n)
+      }
+
+      BWAMEM2_INDEX(reference_ch)
+
+      bwamem2mem_input = reads_ch
+      | combine(BWAMEM2_INDEX.out.index)
+      | combine(reference_ch)
+      | map {
+         n ->
+         return tuple([n.get(0), n.get(1)], [n.get(2), n.get(3)], [n.get(4), n.get(5)], true )
+       }
+
+      BWAMEM2_MEM(
+        bwamem2mem_input | map{ n -> n.get(0)},
+        bwamem2mem_input | map{ n -> n.get(1)},
+        bwamem2mem_input | map{ n -> n.get(2)},
+        bwamem2mem_input | map{ n -> n.get(3)}
+      )
+    }
+
 }
