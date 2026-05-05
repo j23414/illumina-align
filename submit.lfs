@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#BSUB -n 1
+#BSUB -o out.%J
+#BSUB -e err.%J
+#BSUB -J NXFL_MINOR_VARIANTS
+#BSUB -N
+###BSUB -u email@somewhere.com
+
+# Please do not remove this line
+source /etc/bashrc.modules
+
+# Load Nextflow dependencies
+source /home/jchang99/.bashrc
+conda activate nf-env
+
+module load htslib/1.22.1
+
+nextflow run unnamed/main.nf \
+  --reads "hmibioinfo/*_{R1,R2}_001.fastq.gz" \
+  --reference "reference/reference.fasta" \
+  -resume \
+  -profile stjude
