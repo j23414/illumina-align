@@ -22,28 +22,29 @@ process MY_SAMTOOLS_VIEW {
         : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}"
 
     input: tuple val(reference_name), path(bam)
-    output: path("${bam.baseName}_${reference_name}.bam")
+    output: tuple val("$reference_name"), path("${bam.baseName}_${reference_name}.bam")
 
     script:
     """
     samtools index ${bam}
-    samtools view -b ${bam} ${reference_name} > ${bam.baseName}_${reference_name}.bam
+    samtools view -h ${bam} | grep -e "${reference_name}" -e "^@PG" | samtools view -bS > ${bam.baseName}_${reference_name}.bam
     """
 }
 
 process VIRAL_CONSENSUS {
-    input: tuple path(bam), path(ref)
+    maxForks 5
+    memory 513.GB
+    label 'process_high'
+
+    input: tuple val(refname), path(bam), path(ref)
     output: path("${bam.baseName}.fasta")
     script:
     """
-    module load htslib/1.22.1
+    grep -A1 ${refname} ${ref} > ${refname}.fasta
 
-    export REFNAME=`echo ${bam.baseName} | awk -F'_' '{{print \$2}}'`
-    grep -A1 "\$REFNAME" ${ref} > temp_ref.fasta
-
-    /research_jude/rgs01_jude/groups/chagugrp/home/common/bin/viral_consensus \
+    viral_consensus \
     -i ${bam} \
-    -r temp_ref.fasta \
+    -r ${refname}.fasta \
     -o ${bam.baseName}.fasta
     """
 }
@@ -110,7 +111,6 @@ workflow {
 
       reference_names_ch
       | combine(BWAMEM2_MEM.output.bam | map{ n -> n.get(1)})
-      | view
       | MY_SAMTOOLS_VIEW
       | combine(reference_ch | map{ n -> n.get(1)})
       | VIRAL_CONSENSUS
