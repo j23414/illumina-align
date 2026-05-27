@@ -9,7 +9,7 @@ process GET_REFERENCE_NAMES {
   output: path("${reference.baseName}_names.txt")
   script:
   """
-  grep ">" ${reference} | sed 's/>//g' > ${reference.baseName}_names.txt
+  grep ">" ${reference} | sed 's/>//g' | sed 's/ //g' > ${reference.baseName}_names.txt
   """
 }
 
@@ -22,12 +22,14 @@ process MY_SAMTOOLS_VIEW {
         : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}"
 
     input: tuple val(reference_name), path(bam)
-    output: tuple val("$reference_name"), path("${bam.baseName}_${reference_name}.bam")
+    output: tuple val("${reference_name.tokenize('|')[0]}"), path("${bam.baseName}_*.bam")
 
     script:
+    def refname = reference_name.tokenize('|')[0]
+
     """
     samtools index ${bam}
-    samtools view -h ${bam} | grep -e "${reference_name}" -e "^@PG" | samtools view -bS > ${bam.baseName}_${reference_name}.bam
+    samtools view -h ${bam} | grep -e "${refname}" -e "^@PG" | samtools view -bS > ${bam.baseName}_${refname}.bam
     """
 }
 
