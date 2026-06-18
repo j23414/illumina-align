@@ -1,17 +1,14 @@
-# unnamed
+# illumina-align
 
-rename this later :P
+A modular workflow for aligning Illumina sequencing data and summary statistics prior to downstream analysis.
 
 ## Usage
 
 ```
-nextflow run j23414/unnamed -r main \
+nextflow run j23414/illumina-align \
   --reads [path/*_{R1,R2}_001.fastq.gz \
-  [--reference [path/reference.fasta] \
-  --outdir "results" \
-  -resume \
+  --reference [path/reference.fasta] \
+  --outdir "align-results" \
   -profile stjude
 ```
 
-* If only the reads are provided, run QC (fastqc, multiqc). 
-* If reference is provided, run BWAMEM2...
