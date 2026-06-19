@@ -1,5 +1,3 @@
-include { BWAMEM2_INDEX } from './modules/nf-core/bwamem2/index/main'
-include { BWAMEM2_MEM } from './modules/nf-core/bwamem2/mem/main'
 include { SAMTOOLS_VIEW } from './modules/nf-core/samtools/view/main'
 
 process GET_REFERENCE_NAMES {
@@ -51,39 +49,15 @@ process VIRAL_CONSENSUS {
 
 workflow {
     main:
-    // Illumina Reads
-    reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
-//      | take(3)
-      | map { n ->
-            def meta = [id: n.get(0) ]
-            return tuple(meta, n.get(1))
-        }
-//      | view
+    // BAM files
+    bam_ch = channel.fromPath(params.bam, checkIfExists:true)
 
     // Load reference
-    if(params.reference){
       reference_ch = channel.fromPath(params.reference, checkIfExists:true)
       | map {
         n ->
         return tuple(n.baseName, n)
       }
-
-      BWAMEM2_INDEX(reference_ch)
-
-      bwamem2mem_input = reads_ch
-      | combine(BWAMEM2_INDEX.out.index)
-      | combine(reference_ch)
-      | map {
-         n ->
-         return tuple([n.get(0), n.get(1)], [n.get(2), n.get(3)], [n.get(4), n.get(5)], true )
-       }
-
-      BWAMEM2_MEM(
-        bwamem2mem_input | map{ n -> n.get(0)},
-        bwamem2mem_input | map{ n -> n.get(1)},
-        bwamem2mem_input | map{ n -> n.get(2)},
-        bwamem2mem_input | map{ n -> n.get(3)}
-      )
 
       // Split reference by segment name
       reference_names_ch = reference_ch
@@ -93,10 +67,9 @@ workflow {
       | flatten
 
       reference_names_ch
-      | combine(BWAMEM2_MEM.output.bam | map{ n -> n.get(1)})
+      | combine(bam_ch)
       | MY_SAMTOOLS_VIEW
       | combine(reference_ch | map{ n -> n.get(1)})
       | VIRAL_CONSENSUS
       | view
-    }
 }
