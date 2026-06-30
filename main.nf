@@ -2,6 +2,7 @@ include { BWAMEM2_INDEX } from './modules/nf-core/bwamem2/index/main'
 include { BWAMEM2_MEM } from './modules/nf-core/bwamem2/mem/main'
 
 process COUNT_READS {
+  tag "${meta.id}"
   label 'process_low'
 
   input:
@@ -24,6 +25,7 @@ process COUNT_READS {
 }
 
 process SAMTOOLS_COVERAGE {
+    tag "${meta.id}"
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
