@@ -12,3 +12,11 @@ nextflow run j23414/illumina-align \
   -profile stjude
 ```
 
+## Optional post-processing merging
+
+```
+cat align-results/samtools_coverage/*tophit* > all-top-coverage.tsv
+python illumina-align/bin/coverage_to_wide.py \
+  --top-coverage all-top-coverage.tsv \
+  --merged results-coverage.tsv
+```
