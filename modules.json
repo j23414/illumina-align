@@ -15,6 +15,11 @@
             "git_sha": "8325a8155a77a336a613a504b8e4d6cea7a2344a",
             "installed_by": ["modules"]
           },
+          "ivar/trim": {
+            "branch": "master",
+            "git_sha": "3dd0d7a2ab0e2333bcf198c7bf0b8744c24413dc",
+            "installed_by": ["modules"]
+          },
           "samtools/consensus": {
             "branch": "master",
             "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
@@ -24,7 +29,7 @@
             "branch": "master",
             "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
             "installed_by": ["modules"]
-           }
+          }
         }
       }
     }
