@@ -34,12 +34,13 @@ process SAMTOOLS_COVERAGE {
   input: tuple val(meta), path(bam)
   output: tuple path("${bam.baseName}_coverage.tsv"), path("${bam.baseName}_tophit.tsv")
   script:
+  def segments = params.segments
   """
   samtools coverage ${bam} > ${bam.baseName}_coverage.tsv
   cat ${bam.baseName}_coverage.tsv | sort -k6,6nr > ${bam.baseName}_sorted.tsv
 
   # 1=reference; 4=numreads; 6=coverage; 7=meandepth
-  for segment in HA NA PB2 PB1 PA NP MP NS; do
+  for segment in ${segments}; do
     grep "|\$segment" ${bam.baseName}_sorted.tsv \
         | awk -F'\t' -v seg="\$segment" 'OFS="\t" {{print "${bam.baseName}", seg, \$1, \$4, \$6, \$7}}' \
         | head -n1 \
