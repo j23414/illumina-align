@@ -14,6 +14,11 @@ def main():
         help="Input TSV file (all-top-coverage.tsv)"
     )
     parser.add_argument(
+        "--readcount",
+        required=False,
+        help="Input TSV file (all-readcount.tsv)"
+    )
+    parser.add_argument(
         "--merged",
         required=True,
         help="Output TSV file"
@@ -55,6 +60,28 @@ def main():
 
     # Restore sample as a column
     wide = wide.reset_index()
+
+    # Merge readcount table if provided
+    if args.readcount:
+        readcounts = pd.read_csv(
+            args.readcount,
+            sep="\t",
+            header=None,
+            names=["sample", "R1_readcount", "R2_readcount"],
+            dtype=str,
+            na_filter=False
+        )
+
+        wide = wide.merge(
+            readcounts,
+            on="sample",
+            how="left"
+        )
+
+        # Put the readcount columns immediately after sample
+        first_cols = ["sample", "R1_readcount", "R2_readcount"]
+        other_cols = [c for c in wide.columns if c not in first_cols]
+        wide = wide[first_cols + other_cols]
 
     # Write output
     wide.to_csv(

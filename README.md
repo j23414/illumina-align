@@ -15,8 +15,16 @@ nextflow run j23414/illumina-align \
 ## Optional post-processing merging
 
 ```
+# (option A) Just get table of coverage
 cat align-results/samtools_coverage/*tophit* > all-top-coverage.tsv
 python illumina-align/bin/coverage_to_wide.py \
   --top-coverage all-top-coverage.tsv \
+  --merged results-coverage.tsv
+
+# (option B) Combine with table of initial read counts
+cat align-results/countreads/*_readcount.tsv > all-readcount.tsv
+python illumina-align/bin/coverage_to_wide.py \
+  --top-coverage all-top-coverage.tsv \
+  --readcount all-readcount.tsv \
   --merged results-coverage.tsv
 ```
