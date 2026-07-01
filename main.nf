@@ -36,7 +36,10 @@ process SAMTOOLS_COVERAGE {
         : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}"
 
   input: tuple val(meta), path(bam)
-  output: tuple path("${bam.baseName}_coverage.tsv"), path("${bam.baseName}_tophit.tsv")
+  output:
+  tuple val(meta), path("${bam.baseName}_coverage.tsv"), emit: coverage
+  tuple val(meta), path("${bam.baseName}_tophit.tsv"), emit: tophit
+
   script:
   def segments = params.segments
   """
@@ -50,6 +53,19 @@ process SAMTOOLS_COVERAGE {
         | head -n1 \
         >> ${bam.baseName}_tophit.tsv
   done
+  """
+}
+
+process PLOT_DEPTH {
+  tag "${meta.id}"
+  label 'process_low'
+
+  input: tuple val(meta), path(depth), path(tophit)
+  output: tuple val(meta), path("${depth.baseName}_depth.png")
+  script:
+  """
+  # TODO: Parameterize this or figure out why Rscript in bin not detected
+  Rscript /home/jchang99/PROJECT_SHORTCUTS/Malin/Coverage/illumina-align/bin/plot_depth.R ${depth} ${tophit} ${depth.baseName}_depth.png
   """
 }
 
@@ -107,4 +123,10 @@ workflow {
       BWAMEM2_MEM.out.bam | join(SAMTOOLS_INDEX.out.index),
       [[],[]] // All positions, so pass an empty positional value, this might get long if there are many ~200 references
     )
+
+    if (params.plot_depth){
+      SAMTOOLS_DEPTH.out.tsv
+      | join(SAMTOOLS_COVERAGE.out.tophit)
+      | PLOT_DEPTH
+    }
 }
