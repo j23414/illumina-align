@@ -12,7 +12,9 @@ nextflow run j23414/illumina-align \
   -profile stjude
 ```
 
-## Optional post-processing merging
+## Optional post processing
+
+### (1) post-process merging for coverage tables
 
 ```
 # (option A) Just get table of coverage
@@ -27,4 +29,10 @@ python illumina-align/bin/coverage_to_wide.py \
   --top-coverage all-top-coverage.tsv \
   --readcount all-readcount.tsv \
   --merged results-coverage.tsv
+```
+
+### (2) post-process plotting for read depth along the references
+
+```
+Rscript illumina-align/bin/plot_depth.R align-results/samtools_depth/sample.tsv align-results/samtools_coverage/sample_tophit.tsv sample_depth.png
 ```
