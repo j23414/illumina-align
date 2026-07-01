@@ -23,10 +23,21 @@ order <- tophit$reference
 depth <- subset(depth, reference %in% order)
 
 depth$reference <- factor(depth$reference, levels = order)
+tophit$reference <- factor(tophit$reference, levels=order)
+tophit$label <- sprintf(" Coverage: %.1f%%\n Mean depth: %.1f",
+                         tophit$coverage, tophit$meandepth)
 
 p <- ggplot(depth, aes(position, depth)) +
     geom_line() +
     facet_wrap(~reference, scales = "free_x", ncol = 1) +
+    geom_text(
+        data = tophit,
+        aes(x = -Inf, y = Inf, label = label),
+        hjust = 0, vjust = 1,
+        size = 3,
+        inherit.aes = FALSE
+    ) +
+    scale_y_log10() +
     theme_bw() +
     labs(x = "Position", y = "Depth")
 
