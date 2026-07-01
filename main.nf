@@ -1,5 +1,7 @@
 include { BWAMEM2_INDEX } from './modules/nf-core/bwamem2/index/main'
 include { BWAMEM2_MEM } from './modules/nf-core/bwamem2/mem/main'
+include { SAMTOOLS_INDEX } from './modules/nf-core/samtools/index/main'
+include { SAMTOOLS_DEPTH } from './modules/nf-core/samtools/depth/main'
 
 process COUNT_READS {
   tag "${meta.id}"
@@ -93,7 +95,16 @@ workflow {
       bwamem2mem_input | map{ n -> n.get(3)}
     )
 
+    // Calculate a single coverage value
     BWAMEM2_MEM.out.bam
     | SAMTOOLS_COVERAGE
 
+    // Get read depth across all positions of reference
+    BWAMEM2_MEM.out.bam
+    | SAMTOOLS_INDEX
+
+    SAMTOOLS_DEPTH(
+      BWAMEM2_MEM.out.bam | join(SAMTOOLS_INDEX.out.index),
+      [[],[]] // All positions, so pass an empty positional value, this might get long if there are many ~200 references
+    )
 }
