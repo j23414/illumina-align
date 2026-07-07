@@ -21,13 +21,14 @@ tophit <- read.table(tophit_file, header = FALSE, comment.char = '',
 order <- tophit$reference
 
 depth <- subset(depth, reference %in% order)
+depth$plot_depth <- pmax(depth$depth, 1)
 
 depth$reference <- factor(depth$reference, levels = order)
 tophit$reference <- factor(tophit$reference, levels=order)
 tophit$label <- sprintf(" Coverage: %.1f%%\n Mean depth: %.1f",
                          tophit$coverage, tophit$meandepth)
 
-p <- ggplot(depth, aes(position, depth)) +
+p <- ggplot(depth, aes(position, plot_depth)) +
     geom_line() +
     facet_wrap(~reference, scales = "free_x", ncol = 1) +
     geom_text(
