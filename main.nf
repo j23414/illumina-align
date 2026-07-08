@@ -63,9 +63,9 @@ process PLOT_DEPTH {
   input: tuple val(meta), path(depth), path(tophit)
   output: tuple val(meta), path("${depth.baseName}_depth.png")
   script:
+  def plot_depth_script=file(params.plot_depth_script)
   """
-  # TODO: Parameterize this or figure out why Rscript in bin not detected
-  Rscript /home/jchang99/PROJECT_SHORTCUTS/Malin/Coverage/illumina-align/bin/plot_depth.R ${depth} ${tophit} ${depth.baseName}_depth.png
+  Rscript ${plot_depth_script} ${depth} ${tophit} ${depth.baseName}_depth.png
   """
 }
 
@@ -124,7 +124,7 @@ workflow {
       [[],[]] // All positions, so pass an empty positional value, this might get long if there are many ~200 references
     )
 
-    if (params.plot_depth){
+    if (params.plot_depth_script){
       SAMTOOLS_DEPTH.out.tsv
       | join(SAMTOOLS_COVERAGE.out.tophit)
       | PLOT_DEPTH
