@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#BSUB -n 1
+#BSUB -n 2
 #BSUB -o out.%J
 #BSUB -e err.%J
-#BSUB -J NXFL_MINOR_VARIANTS
+#BSUB -J ALIGN_COVERAGE
 #BSUB -N
 ###BSUB -u email@somewhere.com
 
@@ -15,9 +15,12 @@ source /home/jchang99/.bashrc
 conda activate nf-env
 
 module load htslib/1.22.1
+module load bwa-mem2/2.2.1
+module load samtools/1.15.1
+module load R
 
-nextflow run unnamed/main.nf \
-  --reads "hmibioinfo/*_{R1,R2}_001.fastq.gz" \
-  --reference "reference/reference.fasta" \
-  -resume \
+nextflow run illumina-align/main.nf \
+  --samplesheet samplesheet.csv \
+  --reference "reference/fluA_mmseq2cdhit_ref.fasta" \
+  --plot_depth_script illumina-align/bin/plot_depth.R \
   -profile stjude
