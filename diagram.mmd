@@ -1,0 +1,61 @@
+%%metro title: j23414/illumina-align
+%%metro line_order: definition
+%%metro mode: light
+%%metro line: fq | FASTQ.GZ | #60a5fa
+%%metro line: fasta | FASTA | #c792ea
+%%metro line: txt | TXT | #ecb132
+%%metro line: bam | BAM | #22c55e
+
+graph LR
+
+    subgraph input [Input]
+        ref["Reference FASTA"]
+        reads["Illumina paired-end fq.gz files"] 
+    end
+
+    subgraph alignment [Mapping to reference(s)]
+        index["bwa-mem2 index"]
+        align["bwa-mem2 mem"]
+    end
+
+    subgraph statistics [Read Counts]
+        count["COUNT_READS"]
+        readcount["Read Count TSV"]
+    end
+
+    subgraph aligned [Aligned BAM]
+    	aligned[BAM files]
+    end
+
+    subgraph coverage [Coverage of reference(s) and get TopHit per gene/segment]
+        bamindex["samtools index"]
+        depth["samtools depth"]
+        depth_tsv["Depth TSV"]
+
+        coverage["samtools coverage"]
+        tophit["Top-hit TSV"]
+        coverage_tsv["Coverage Summary TSV"]
+    end
+
+    subgraph plots [Coverage plots]
+        depth_png["coverage_plot_by_sample.png"]
+    end
+
+    reads -->|fq| align
+    ref -->|fasta| index
+    index -->|fasta| align
+    align -->|bam| aligned
+    aligned -->|bam| coverage
+    aligned -->|bam| bamindex
+    bamindex -->|bam| depth
+
+    coverage -->|txt| coverage_tsv
+    coverage -->|txt| tophit
+    depth -->|txt| depth_tsv
+    depth_tsv -->|txt| depth_png
+    tophit -->|txt| depth_png
+
+    %% Read counts
+    reads -->|fq| count
+    count -->|txt| readcount
+    readcount -->|txt| depth_png

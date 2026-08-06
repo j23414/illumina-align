@@ -2,6 +2,8 @@
 
 A modular workflow for aligning Illumina sequencing data and summary statistics prior to downstream analysis.
 
+![](diagram.png)
+
 ## Usage
 
 ```
