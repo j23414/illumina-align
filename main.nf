@@ -101,7 +101,7 @@ workflow {
     | combine(reference_ch)
     | map {
        n ->
-       return tuple([n.get(0), n.get(1)], [n.get(2), n.get(3)], [n.get(4), n.get(5)], true )
+       return tuple([n.get(0), n.get(1)], [n.get(2), n.get(3)], [n.get(4), n.get(5)], params.keep_multimapped)
      }
 
     BWAMEM2_MEM(
