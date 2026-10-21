@@ -44,7 +44,8 @@ process SAMTOOLS_COVERAGE {
   def segments = params.segments
   """
   samtools coverage ${bam} > ${bam.baseName}_coverage.tsv
-  cat ${bam.baseName}_coverage.tsv | sort -k6,6nr > ${bam.baseName}_sorted.tsv
+  # Sort by coverage, then by mapped depth
+  cat ${bam.baseName}_coverage.tsv | sort -k6,6nr -k7,7nr > ${bam.baseName}_sorted.tsv
 
   # 1=reference; 4=numreads; 6=coverage; 7=meandepth
   for segment in ${segments}; do
