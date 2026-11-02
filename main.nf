@@ -89,6 +89,24 @@ process PLOT_DEPTH {
   """
 }
 
+process ALL_SAMPLE_DEPTH {
+    input:
+    path(depth_tsvs)
+
+    output:
+    path("all-combined-depth.tsv")
+
+    script:
+    """
+    printf 'Sample\tCHROM\tPOS\tDepth\n' > all-combined-depth.tsv
+
+    for depth_file in ${depth_tsvs}; do
+        sample=\$(basename "\$depth_file" .tsv)
+        awk -v sample="\$sample" 'BEGIN {OFS="\\t"} { print sample, \$0 }' "\$depth_file" >> all-combined-depth.tsv
+    done
+    """
+}
+
 workflow {
     main:
     // Load illumina reads
@@ -169,6 +187,12 @@ workflow {
       BWAMEM2_MEM.out.bam | join(SAMTOOLS_INDEX.out.index),
       [[],[]] // All positions, so pass an empty positional value, this might get long if there are many ~200 references
     )
+
+    depth_tsv_ch = SAMTOOLS_DEPTH.out.tsv
+    .map { _meta, tsv -> tsv }
+    .collect()
+
+    ALL_SAMPLE_DEPTH(depth_tsv_ch)
 
     if (params.plot_depth){
       SAMTOOLS_DEPTH.out.tsv
