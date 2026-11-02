@@ -57,6 +57,24 @@ process SAMTOOLS_COVERAGE {
   """
 }
 
+process COVERAGE_TO_WIDE {
+  conda 'conda-forge::python=3.12'
+
+  input:
+    tuple path(top_coverage), path(readcount)
+
+  output:
+    path("results-coverage.tsv")
+
+  script:
+  """
+  python ${workflow.projectDir}/bin/coverage_to_wide.py \
+    --top-coverage ${top_coverage} \
+    --readcount ${readcount} \
+    --merged results-coverage.tsv
+  """
+}
+
 process PLOT_DEPTH {
   tag "${meta.id}"
   label 'process_low'
@@ -130,6 +148,23 @@ workflow {
     BWAMEM2_MEM.out.bam
     | SAMTOOLS_INDEX
 
+    // Wide coverage table
+    top_coverage_ch = SAMTOOLS_COVERAGE.out.tophit
+    .map { _meta, tsv -> tsv }
+    .collectFile(
+      name: "${params.outdir}/all-top-coverage.tsv"
+    )
+    readcount_ch = COUNT_READS.out.tsv
+    .map { _meta, tsv -> tsv }
+    .collectFile(
+      name: "${params.outdir}/all-readcount.tsv"
+    )
+    merge_inputs_ch = top_coverage_ch.combine(readcount_ch)
+    COVERAGE_TO_WIDE(
+      merge_inputs_ch
+    )
+
+    // Get depth across entire segment
     SAMTOOLS_DEPTH(
       BWAMEM2_MEM.out.bam | join(SAMTOOLS_INDEX.out.index),
       [[],[]] // All positions, so pass an empty positional value, this might get long if there are many ~200 references
