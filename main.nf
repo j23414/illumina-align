@@ -30,7 +30,7 @@ process SAMTOOLS_COVERAGE {
     tag "${meta.id}"
     label 'process_low'
 
-    conda "${moduleDir}/environment.yml"
+    conda "${workflow.projectDir}/modules/nf-core/samtools/index/environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer']
         ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/8c/8c5d2818c8b9f58e1fba77ce219fdaf32087ae53e857c4a496402978af26e78c/data'
         : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}"
@@ -58,7 +58,7 @@ process SAMTOOLS_COVERAGE {
 }
 
 process COVERAGE_TO_WIDE {
-  conda 'conda-forge::python=3.12'
+  conda 'conda-forge::python=3.12 conda-forge:pandas=2.2'
 
   input:
     tuple path(top_coverage), path(readcount)
@@ -68,9 +68,9 @@ process COVERAGE_TO_WIDE {
 
   script:
   """
-  python ${workflow.projectDir}/bin/coverage_to_wide.py \
-    --top-coverage ${top_coverage} \
-    --readcount ${readcount} \
+  python ${workflow.projectDir}/bin/coverage_to_wide.py \\
+    --top-coverage ${top_coverage} \\
+    --readcount ${readcount} \\
     --merged results-coverage.tsv
   """
 }
