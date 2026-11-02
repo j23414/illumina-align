@@ -61,12 +61,13 @@ process PLOT_DEPTH {
   tag "${meta.id}"
   label 'process_low'
 
+  conda 'conda-forge::r-base=4.4 conda-forge::r-ggplot2'
+
   input: tuple val(meta), path(depth), path(tophit)
   output: tuple val(meta), path("${depth.baseName}_depth.png")
   script:
-  def plot_depth_script=file(params.plot_depth_script)
   """
-  Rscript ${plot_depth_script} ${depth} ${tophit} ${depth.baseName}_depth.png
+  Rscript ${workflow.projectDir}/bin/plot_depth.R ${depth} ${tophit} ${depth.baseName}_depth.png
   """
 }
 
@@ -134,7 +135,7 @@ workflow {
       [[],[]] // All positions, so pass an empty positional value, this might get long if there are many ~200 references
     )
 
-    if (params.plot_depth_script){
+    if (params.plot_depth){
       SAMTOOLS_DEPTH.out.tsv
       | join(SAMTOOLS_COVERAGE.out.tophit)
       | PLOT_DEPTH
