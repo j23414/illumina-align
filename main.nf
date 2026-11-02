@@ -89,23 +89,52 @@ process PLOT_DEPTH {
   """
 }
 
-process ALL_SAMPLE_DEPTH {
+process FILTER_TOPHIT_DEPTH {
+
     input:
-    path(depth_tsvs)
+    tuple val(meta), path(depth), path(tophit)
 
     output:
-    path("all-combined-depth.tsv")
+    tuple val(meta), path("${meta.id}.top-hit-depth.tsv"), emit: tsv
 
     script:
     """
-    printf 'Sample\tCHROM\tPOS\tDepth\n' > all-combined-depth.tsv
+    awk -v sample="${meta.id}" '
+        BEGIN {
+            FS = OFS = "\\t"
+        }
 
-    for depth_file in ${depth_tsvs}; do
-        sample=\$(basename "\$depth_file" .tsv)
-        awk -v sample="\$sample" 'BEGIN {OFS="\\t"} { print sample, \$0 }' "\$depth_file" >> all-combined-depth.tsv
-    done
+        # Read top-hit references (column 3)
+        NR == FNR {
+            refs[\$3] = 1
+            next
+        }
+
+        # Retain only matching reference sequences
+        \$1 in refs {
+            print sample, \$0
+        }
+    ' $tophit $depth > ${meta.id}.top-hit-depth.tsv
     """
 }
+
+// process ALL_SAMPLE_DEPTH {
+//     input:
+//     path(depth_tsvs)
+
+//     output:
+//     path("all-combined-depth.tsv")
+
+//     script:
+//     """
+//     printf 'Sample\tCHROM\tPOS\tDepth\n' > all-combined-depth.tsv
+
+//     for depth_file in ${depth_tsvs}; do
+//         sample=\$(basename "\$depth_file" .tsv)
+//         awk -v sample="\$sample" 'BEGIN {OFS="\\t"} { print sample, \$0 }' "\$depth_file" >> all-combined-depth.tsv
+//     done
+//     """
+// }
 
 workflow {
     main:
@@ -170,12 +199,12 @@ workflow {
     top_coverage_ch = SAMTOOLS_COVERAGE.out.tophit
     .map { _meta, tsv -> tsv }
     .collectFile(
-      name: "${params.outdir}/all-top-coverage.tsv"
+      name: "${params.outdir}/merge/all-top-coverage.tsv"
     )
     readcount_ch = COUNT_READS.out.tsv
     .map { _meta, tsv -> tsv }
     .collectFile(
-      name: "${params.outdir}/all-readcount.tsv"
+      name: "${params.outdir}/merge/all-readcount.tsv"
     )
     merge_inputs_ch = top_coverage_ch.combine(readcount_ch)
     COVERAGE_TO_WIDE(
@@ -188,11 +217,28 @@ workflow {
       [[],[]] // All positions, so pass an empty positional value, this might get long if there are many ~200 references
     )
 
-    depth_tsv_ch = SAMTOOLS_DEPTH.out.tsv
-    .map { _meta, tsv -> tsv }
-    .collect()
+    left_depth_ch = SAMTOOLS_DEPTH.out.tsv
+    .map { meta, tsv -> tuple(meta.id, meta, tsv)}
+    right_tophit_ch = SAMTOOLS_COVERAGE.out.tophit
+    .map { meta, tsv -> tuple(meta.id, tsv)}
 
-    ALL_SAMPLE_DEPTH(depth_tsv_ch)
+    depth_tophit_ch = left_depth_ch
+    .join(right_tophit_ch)
+    .map { id, meta, depth, tophit -> tuple(meta, depth, tophit)}
+
+    FILTER_TOPHIT_DEPTH(
+      depth_tophit_ch
+    )
+
+    FILTER_TOPHIT_DEPTH.out.tsv
+    .map { _meta, tsv -> tsv }
+    .collectFile(
+      name: "${params.outdir}/results-depth.tsv",
+      seed: "Sample\tCHROM\tPOS\tDepth",
+      newLine: true,
+    )
+
+    //ALL_SAMPLE_DEPTH(depth_tsv_ch)
 
     if (params.plot_depth){
       SAMTOOLS_DEPTH.out.tsv
