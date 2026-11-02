@@ -112,6 +112,15 @@ workflow {
       bwamem2mem_input | map{ n -> n.get(3)}
     )
 
+    // Generate processed samplesheet
+    BWAMEM2_MEM.out.bam
+    .map { meta, bam -> "${meta.id},bwamem2_mem/${bam.fileName}" }
+    .collectFile(
+      name: "${params.outdir}/processed_samplesheet.csv",
+      seed: "sample,bam",
+      newLine: true,
+    )
+
     // Calculate a single coverage value
     BWAMEM2_MEM.out.bam
     | SAMTOOLS_COVERAGE
