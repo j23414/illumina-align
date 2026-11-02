@@ -8,33 +8,27 @@ A modular workflow for aligning Illumina sequencing data and summary statistics 
 
 ```
 nextflow run j23414/illumina-align \
-  --reads [path/*_{R1,R2}_001.fastq.gz \
-  --reference [path/reference.fasta] \
-  --outdir "align-results" \
+  --samplesheet samplesheet.csv \
+  --reference reference.fasta \
   -profile stjude
 ```
 
-## Optional post processing
+| parameter | description |
+|:--|:--|
+| `--samplesheet` | CSV file of "sample,R1,R2" |
+| `--reference` | FASTA file of reference(s) to align against |
+| `--keep_multimapped` | Keep multimapped reads instead of only the top alignment position (default=false) |
+| `--segments` | Get the top hit reference by segment (default="HA NA PB2 PB1 PA NP MP NS"), must be in the reference header as the final pipe-delimited annotation |
+| `--plot_depth` | If a ggplot2 plot of depths along the reference should be generated (default= false)|
 
-### (1) post-process merging for coverage tables
+## Outputs
 
-```
-# (option A) Just get table of coverage
-cat align-results/samtools_coverage/*tophit* > all-top-coverage.tsv
-python illumina-align/bin/coverage_to_wide.py \
-  --top-coverage all-top-coverage.tsv \
-  --merged results-coverage.tsv
-
-# (option B) Combine with table of initial read counts
-cat align-results/countreads/*_readcount.tsv > all-readcount.tsv
-python illumina-align/bin/coverage_to_wide.py \
-  --top-coverage all-top-coverage.tsv \
-  --readcount all-readcount.tsv \
-  --merged results-coverage.tsv
-```
-
-### (2) post-process plotting for read depth along the references
+A non-exaustive list of outputs
 
 ```
-Rscript illumina-align/bin/plot_depth.R align-results/samtools_depth/sample.tsv align-results/samtools_coverage/sample_tophit.tsv sample_depth.png
+|_ align-results/
+  |_ results-coverage.tsv # <= based on coverage and average depth, subtyping
+  |_ results-depth.tsv    # <= depth along the references, send to shiny app to place variants in context
+  |_ bwamem2_mem/         # <= alignments, can send to variant, depth, consensus, or filter calling
+  |_ processed_samplesheet.tsv # <= samplesheet to use in downstream pipelines
 ```
