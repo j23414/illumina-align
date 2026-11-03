@@ -60,6 +60,10 @@ process SAMTOOLS_COVERAGE {
 process COVERAGE_TO_WIDE {
   conda 'conda-forge::python=3.12 conda-forge:pandas=2.2'
 
+  container "${workflow.containerEngine in ['singularity', 'apptainer']
+    ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/88/8829bf123fc6b4b654fc8ab8b619d7f0e895993227a81150fa39aa590da91b1c/data'
+    : 'community.wave.seqera.io/library/pandas:3.1.0--f6c858a02e385828'}"
+
   input:
     tuple path(top_coverage), path(readcount)
 
