@@ -182,18 +182,43 @@ workflow {
       bwamem2mem_input | map{ n -> n.get(3)}
     )
 
-    // Generate processed samplesheet
-    BWAMEM2_MEM.out.bam
-    .map { meta, bam -> "${meta.id},bwamem2_mem/${bam.fileName}" }
-    .collectFile(
-      name: "${params.outdir}/processed_samplesheet.csv",
-      seed: "sample,bam",
-      newLine: true,
-    )
+    // // Generate processed samplesheet
+    // BWAMEM2_MEM.out.bam
+    // .map { meta, bam -> "${meta.id},bwamem2_mem/${bam.fileName}" }
+    // .collectFile(
+    //   name: "${params.outdir}/processed_samplesheet.csv",
+    //   seed: "sample,bam",
+    //   newLine: true,
+    // )
 
     // Calculate a single coverage value
     BWAMEM2_MEM.out.bam
     | SAMTOOLS_COVERAGE
+
+    // Generate processed samplesheet with top-hit references
+    bam_ch = BWAMEM2_MEM.out.bam
+    .map { meta, bam -> tuple(meta.id, meta, bam) }
+
+    tophit_ch = SAMTOOLS_COVERAGE.out.tophit
+    .map { meta, tophit -> tuple(meta.id, tophit) }
+
+    bam_tophit_ch = bam_ch
+    .join(tophit_ch)
+    .map {id, meta, bam, tophit ->
+        // Extract reference IDs (column 3)
+        def references = tophit.text.readLines()
+          .collect { it.split('\t')[2] }
+          .join(';')
+
+        "${meta.id},bwamem2_mem/${bam.fileName},${references}"
+    }
+
+    bam_tophit_ch
+    .collectFile(
+        name: "${params.outdir}/processed_samplesheet.csv",
+        seed: "sample,bam,references",
+        newLine: true
+    )
 
     // Get read depth across all positions of reference
     BWAMEM2_MEM.out.bam
